@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BankTransfer.Core.Interface
 {
-    public interface IProvider  
+    public interface IBaseProvider  
     {
         Task<T?> FetchBanks<T>() where T : class;
 

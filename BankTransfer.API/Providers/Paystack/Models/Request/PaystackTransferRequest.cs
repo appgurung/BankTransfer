@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BankTransfer.Core.Models.Request.Paystack
+namespace BankTransfer.API.Providers.Paystack.Models.Request
 {
     public class PaystackTransferRequest
     {

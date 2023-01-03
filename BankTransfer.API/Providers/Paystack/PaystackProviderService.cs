@@ -1,13 +1,13 @@
-﻿using BankTransfer.Core.Enums;
+﻿using BankTransfer.API.Providers.Paystack.Models.Request;
+using BankTransfer.API.Providers.Paystack.Models.Response;
+using BankTransfer.Core.Enums;
 using BankTransfer.Core.Helpers;
 using BankTransfer.Core.Interface;
-using BankTransfer.Core.Models.Request.Paystack;
-using BankTransfer.Core.Models.Response.Paystack;
 using Newtonsoft.Json;
 
-namespace BankTransfer.API.Providers
+namespace BankTransfer.API.Providers.Paystack
 {
-    public class PaystackProviderService : IPaystack
+    public class PaystackProviderService : IPaystackProvider
     {
         private readonly IRestClientHelper _http;
         private readonly ConfigHelper _config;
@@ -23,10 +23,10 @@ namespace BankTransfer.API.Providers
             Dictionary<string, string> header = new();
 
             header.Add("Authorization", _config.GetSecreteKey(ProviderType.PAYSTACK));
-            
+
             var resp = await _http.Get("/resolve", true, header, new string[] { $"?account_number={accountNumber}&bank_code={bankCode}" });
 
-            while(resp.statusCode == System.Net.HttpStatusCode.OK)
+            while (resp.statusCode == System.Net.HttpStatusCode.OK)
             {
                 var lookup = JsonConvert.DeserializeObject<AccountEnquiryResponse>(resp.content!);
 
@@ -42,9 +42,9 @@ namespace BankTransfer.API.Providers
 
             header.Add("Authorization", _config.GetSecreteKey(ProviderType.PAYSTACK));
 
-            var resp = await _http.Get("/bank", true, header, new string[] { "?currency=NGN"});
+            var resp = await _http.Get("/bank", true, header, new string[] { "?currency=NGN" });
 
-            while(resp.statusCode == System.Net.HttpStatusCode.OK)
+            while (resp.statusCode == System.Net.HttpStatusCode.OK)
             {
                 var banks = JsonConvert.DeserializeObject<FetchBanksResponse>(resp.content!);
                 return banks as T;
@@ -52,7 +52,7 @@ namespace BankTransfer.API.Providers
             return null;
         }
 
-        public async Task<T?> FetchTransactionStatus<T>(string transactionReference) where T: class
+        public async Task<T?> FetchTransactionStatus<T>(string transactionReference) where T : class
         {
             Dictionary<string, string> header = new();
 
@@ -60,7 +60,7 @@ namespace BankTransfer.API.Providers
 
             var resp = await _http.Get($"/transferrecipient/{transactionReference}");
 
-            while(resp.statusCode == System.Net.HttpStatusCode.OK)
+            while (resp.statusCode == System.Net.HttpStatusCode.OK)
             {
                 var transaction = JsonConvert.DeserializeObject<PaystackTransferResponse>(resp.content!);
 
@@ -70,11 +70,11 @@ namespace BankTransfer.API.Providers
             return null;
         }
 
-        public async Task<TOutPut?> SendMoney<TOutPut,TInput>(TInput param) where TInput : class
-                                                                            where TOutPut: class
+        public async Task<TOutPut?> SendMoney<TOutPut, TInput>(TInput param) where TInput : class
+                                                                            where TOutPut : class
         {
             Dictionary<string, string> header = new();
-            
+
             header.Add("Authorization", _config.GetSecreteKey(ProviderType.PAYSTACK));
 
             object paramObj = param;
@@ -106,7 +106,7 @@ namespace BankTransfer.API.Providers
 
             var resp = await _http.Post("/transferrecipient", true, header, JsonConvert.SerializeObject(param), CancellationToken.None);
 
-            while(resp.statusCode == System.Net.HttpStatusCode.OK)
+            while (resp.statusCode == System.Net.HttpStatusCode.OK)
             {
                 var result = JsonConvert.DeserializeObject<PaystackAddRecipientResponse>(resp.content!);
                 return result as TOutPut;

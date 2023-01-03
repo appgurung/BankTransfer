@@ -1,10 +1,11 @@
-﻿using BankTransfer.Core.Enums;
+﻿using BankTransfer.API.Providers.Paystack;
+using BankTransfer.API.Providers.Paystack.Models.Request;
+using BankTransfer.API.Providers.Paystack.Models.Response;
+using BankTransfer.Core.Enums;
 using BankTransfer.Core.Helpers;
 using BankTransfer.Core.Interface;
 using BankTransfer.Core.Models.Request.CBA;
-using BankTransfer.Core.Models.Request.Paystack;
 using BankTransfer.Core.Models.Response.CBA;
-using BankTransfer.Core.Models.Response.Paystack;
 using BankTransfer.Infrastructure.Entities;
 using BankTransfer.Infrastructure.Interface;
 
@@ -12,10 +13,10 @@ namespace BankTransfer.API.Services
 {
     public class CoreBankingService : ICoreBanking
     {
-        private readonly IPaystack _paystack;
+        private readonly IPaystackProvider _paystack;
         private readonly ConfigHelper _config;
         private readonly IRepository<Transaction> _db;
-        public CoreBankingService(IPaystack paystack, ConfigHelper config, IRepository<Transaction> db)
+        public CoreBankingService(IPaystackProvider paystack, ConfigHelper config, IRepository<Transaction> db)
         {
             _paystack = paystack;
             _config = config;

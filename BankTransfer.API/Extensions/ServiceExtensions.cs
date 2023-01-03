@@ -1,4 +1,4 @@
-﻿using BankTransfer.API.Providers;
+﻿using BankTransfer.API.Providers.Paystack;
 using BankTransfer.API.Services;
 using BankTransfer.Core.Helpers;
 using BankTransfer.Core.Interface;
@@ -22,7 +22,7 @@ namespace BankTransfer.API.Extensions
             services.AddTransient<ICoreBanking, CoreBankingService>();
             services.AddScoped<ConfigHelper>();
             services.AddTransient<IRestClientHelper, RestClientHelper>();
-            services.AddTransient<IPaystack, PaystackProviderService>();
+            services.AddTransient<IPaystackProvider, PaystackProviderService>();
             services.AddDbContext<CoreBankingContext>(item => item.UseSqlServer(Configuration.GetConnectionString("BillerDBConnection")!, x => x.MigrationsAssembly("BankTransfer.API")));
             return services;
         }

@@ -52,7 +52,9 @@ namespace BankTransfer.API.Controllers
         [HttpGet("transaction/{transactionReference}")]
         public async Task<IActionResult> TransactionQuery([FromRoute] string transactionReference)
         {
-            return Ok();
+            var resp = await _cba.FetchTransactionStatus(transactionReference);
+
+            return resp.responseCode == "00" ? Ok(resp) : BadRequest(resp);
         }
     }
 }

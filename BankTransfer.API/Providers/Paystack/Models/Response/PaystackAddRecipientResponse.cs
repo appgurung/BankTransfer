@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BankTransfer.Core.Models.Response.Paystack
+namespace BankTransfer.API.Providers.Paystack.Models.Response
 {
-
     public class AddRecipientDatum
     {
         public bool active { get; set; }
@@ -52,6 +51,4 @@ namespace BankTransfer.Core.Models.Response.Paystack
         public List<AddRecipientDatum> data { get; set; }
         public Meta meta { get; set; }
     }
-
-
 }
