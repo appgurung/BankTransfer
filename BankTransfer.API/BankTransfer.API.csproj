@@ -20,4 +20,9 @@
     <ProjectReference Include="..\BankTransfer.Infrastructure\BankTransfer.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Providers\Flutterwave\Models\Response\" />
+    <Folder Include="Providers\Flutterwave\Models\Request\" />
+  </ItemGroup>
+
 </Project>
