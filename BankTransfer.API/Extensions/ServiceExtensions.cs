@@ -3,6 +3,8 @@ using BankTransfer.API.Services;
 using BankTransfer.Core.Helpers;
 using BankTransfer.Core.Interface;
 using BankTransfer.Infrastructure.Context;
+using BankTransfer.Infrastructure.Interface;
+using BankTransfer.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace BankTransfer.API.Extensions
@@ -23,6 +25,7 @@ namespace BankTransfer.API.Extensions
             services.AddScoped<ConfigHelper>();
             services.AddTransient<IRestClientHelper, RestClientHelper>();
             services.AddTransient<IPaystackProvider, PaystackProviderService>();
+            services.AddScoped(typeof(IRepository<>), typeof(RepositoryService<>));
             services.AddDbContext<CoreBankingContext>(item => item.UseSqlServer(Configuration.GetConnectionString("BillerDBConnection")!, x => x.MigrationsAssembly("BankTransfer.API")));
             return services;
         }
@@ -38,7 +41,7 @@ namespace BankTransfer.API.Extensions
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
+            app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
