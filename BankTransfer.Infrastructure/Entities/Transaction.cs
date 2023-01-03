@@ -11,6 +11,7 @@ namespace BankTransfer.Infrastructure.Entities
         public string? BeneficiaryAccountNumber { get; set; }
         public string? BeneficiaryBankCode { get; set; }
         public string? TransactionReference { get; set; }
+        public string? Status { get; set; }
         public DateTime? TransactionDateTime { get; set; }
         public string? CurrencyCode { get; set; }
         public string? ResponseMessage { get; set; }

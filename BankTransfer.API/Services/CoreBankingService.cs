@@ -16,11 +16,15 @@ namespace BankTransfer.API.Services
         private readonly IPaystackProvider _paystack;
         private readonly ConfigHelper _config;
         private readonly IRepository<Transaction> _db;
-        public CoreBankingService(IPaystackProvider paystack, ConfigHelper config, IRepository<Transaction> db)
+        private readonly IServiceProvider _serviceProvider;
+        public CoreBankingService(IPaystackProvider paystack, 
+            ConfigHelper config, IRepository<Transaction> db, 
+            IServiceProvider serviceProvider)
         {
             _paystack = paystack;
             _config = config;
             _db = db;
+            _serviceProvider = serviceProvider;
         }
 
         public async Task<AccountLookUpResponse> AccountNameEnquiry(AccountLookUpRequest param)
@@ -90,7 +94,7 @@ namespace BankTransfer.API.Services
                     {
                         responseCode = resp!.status ? "00" : "99",
                         status = resp!.status ? "SUCCESS" : "FAILURE",
-                        transactionDateTime = resp.data.createdAt.ToShortTimeString(),
+                        transactionDateTime = resp.data!.createdAt.ToShortTimeString(),
                         transactionReference = resp.data.transfer_code,
                         amount = resp.data.amount.ToString(),
                         currencyCode = resp.data.currency,
@@ -103,8 +107,61 @@ namespace BankTransfer.API.Services
 
         public async Task<TransferResponse> TransferFunds(TransferRequest param)
         {
+            var transaction = await _db.SingleOrDefault(x => x.TransactionReference == param.transactionReference, CancellationToken.None);
+
+            if(transaction != null)
+            {
+                return new TransferResponse()
+                {
+                    responseCode = "99", responseMessage = "Duplicate transaction recieved"
+                };
+            }
+
+            //Save record to table first
+            _ = await _db.Insert(new Transaction()
+            {
+                Amount = decimal.Parse(param.amount!),
+                BeneficiaryAccountNumber = param.beneciaryAccountNumber,BeneficiaryBankCode = param.beneciaryBankCode,
+                CallBackUrl = param.callBackUrl,MaximumRetryAttempt = param.maxRetryAttempt,
+                CurrencyCode = param.currencyCode,Guid = Guid.NewGuid().ToString(),
+                Status = nameof(TransactionType.PENDING),Provider = param.provider,
+                TransactionDateTime = DateTime.Now,TransactionReference = param.transactionReference
+            }, CancellationToken.None);
+
+            //Process provider call task in background
+            _ = Task.Run(() => CallProvider(param));       
+
+            return new TransferResponse()
+            {
+                responseCode = "00",
+                status = nameof(TransactionType.PENDING),
+                transactionDateTime = DateTime.Now.ToShortDateString(),
+                transactionReference = param.transactionReference!,
+                amount = param.amount!, beneciaryAccountName = param.beneciaryAccountName!,
+                currencyCode = param.currencyCode!,  beneciaryAccountNumber = param.beneciaryAccountNumber!,
+                responseMessage = "Transaction In Progress",
+                beneciaryBankCode = param.beneciaryBankCode!
+            };
+
+        }
+
+        private ProviderType ResolveProvider(string provider)
+        {
+            if (string.IsNullOrWhiteSpace(provider))
+            {
+                string? defaultProvider = _config.GetDefaultProvider();
+                return (ProviderType)Enum.Parse(typeof(ProviderType), defaultProvider, true);
+            }
+            else
+            {
+                return  (ProviderType)Enum.Parse(typeof(ProviderType), provider, true);
+            }
+        }
+
+        private async void CallProvider(TransferRequest param)
+        {
             ProviderType providerType = ResolveProvider(param.provider!);
-            
+
             switch (providerType)
             {
                 case ProviderType.PAYSTACK:
@@ -119,51 +176,27 @@ namespace BankTransfer.API.Services
                         name = param.beneciaryAccountName!
                     });
 
-                    if (!recipientResult!.status)
-                        return new TransferResponse() { };
-
-                    var resp = await _paystack.SendMoney<PaystackTransferResponse, PaystackTransferRequest>(new PaystackTransferRequest() { 
-                        
-                        amount = int.Parse(param.amount!), 
-                        source = "balance", 
-                        recipient = recipientResult!.data[0].recipient_code, 
+                    var resp = await _paystack.SendMoney<PaystackTransferResponse, PaystackTransferRequest>(new PaystackTransferRequest()
+                    {
+                        amount = int.Parse(param.amount!),
+                        source = "balance",
+                        recipient = recipientResult!.data.recipient_code,
                         reason = param.narration!
                     });
 
-                    //Save record to table
-                    _ = _db.Insert(new Transaction() { 
-                      Amount = decimal.Parse(param.amount!), 
-                      BeneficiaryAccountNumber = param.beneciaryAccountNumber, BeneficiaryBankCode = param.beneciaryBankCode,
-                      CallBackUrl = param.callBackUrl, MaximumRetryAttempt = param.maxRetryAttempt, CurrencyCode = param.currencyCode,
-                      Guid = Guid.NewGuid().ToString(), Provider = param.provider, TransactionDateTime = DateTime.Now,
-                      ResponseCode = resp!.status ? "00" : "99", ResponseMessage = resp.message, TransactionReference = param.transactionReference
-                    }, CancellationToken.None);
+                    var repository = _serviceProvider.GetService<IRepository<Transaction>>();
 
-                    return new TransferResponse()
+                    //Update db transaction record
+                    var transaction = await repository.SingleOrDefault(x => x.TransactionReference == param.transactionReference, CancellationToken.None);
+
+                    if (transaction != null)
                     {
-                        responseCode = resp!.status ? "00" : "99",
-                        status = resp!.status ? "SUCCESS" : "FAILURE",
-                        transactionDateTime = resp.data.createdAt.ToShortTimeString(),
-                        transactionReference = resp.data.transfer_code, amount = resp.data.amount.ToString(),
-                        currencyCode = resp.data.currency,
-                        responseMessage = resp!.status ? "Transfer_Succesful" : "Transfer_Not_Succesful", 
-                        beneciaryBankCode = param.beneciaryBankCode!
-                    };
-
-            }
-            return new TransferResponse() { };
-        }
-
-        private ProviderType ResolveProvider(string provider)
-        {
-            if (string.IsNullOrWhiteSpace(provider))
-            {
-                string? defaultProvider = _config.GetDefaultProvider();
-                return (ProviderType)Enum.Parse(typeof(ProviderType), defaultProvider, true);
-            }
-            else
-            {
-                return  (ProviderType)Enum.Parse(typeof(ProviderType), provider, true);
+                        transaction.Status = resp!.status ? nameof(TransactionType.SUCCESFUL) : nameof(TransactionType.FAILED);
+                        transaction.ResponseCode = resp!.status ? "00" : "99";
+                        transaction.ResponseMessage = resp!.message;
+                    }
+                    await repository.Update(transaction!, CancellationToken.None);                  
+                    break;
             }
         }
     }

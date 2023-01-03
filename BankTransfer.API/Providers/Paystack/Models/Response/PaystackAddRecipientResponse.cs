@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BankTransfer.API.Providers.Paystack.Models.Response
 {
-    public class AddRecipientDatum
+    public class RecipientData
     {
         public bool active { get; set; }
         public DateTime createdAt { get; set; }
@@ -35,20 +35,10 @@ namespace BankTransfer.API.Providers.Paystack.Models.Response
         public string bank_name { get; set; }
     }
 
-    public class Meta
-    {
-        public int total { get; set; }
-        public int skipped { get; set; }
-        public int perPage { get; set; }
-        public int page { get; set; }
-        public int pageCount { get; set; }
-    }
-
     public class PaystackAddRecipientResponse
     {
         public bool status { get; set; }
         public string message { get; set; }
-        public List<AddRecipientDatum> data { get; set; }
-        public Meta meta { get; set; }
+        public RecipientData data { get; set; }
     }
 }

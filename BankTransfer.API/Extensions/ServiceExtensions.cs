@@ -17,16 +17,14 @@ namespace BankTransfer.API.Extensions
             IConfiguration Configuration = builder.Build();
 
             services.AddControllers();
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
-
             services.AddTransient<ICoreBanking, CoreBankingService>();
             services.AddScoped<ConfigHelper>();
             services.AddTransient<IRestClientHelper, RestClientHelper>();
             services.AddTransient<IPaystackProvider, PaystackProviderService>();
             services.AddScoped(typeof(IRepository<>), typeof(RepositoryService<>));
-            services.AddDbContext<CoreBankingContext>(item => item.UseSqlServer(Configuration.GetConnectionString("BillerDBConnection")!, x => x.MigrationsAssembly("BankTransfer.API")));
+            services.AddDbContext<CoreBankingContext>(item => item.UseSqlServer(Configuration.GetConnectionString("CoreBankingDBConnection")!, x => x.MigrationsAssembly("BankTransfer.API")));
             return services;
         }
 
@@ -39,14 +37,12 @@ namespace BankTransfer.API.Extensions
             }
 
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
             });
-
             return app;
 
         }

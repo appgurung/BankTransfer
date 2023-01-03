@@ -26,7 +26,7 @@ namespace BankTransfer.API.Providers.Paystack.Models.Response
     {
         public bool status { get; set; }
         public string message { get; set; }
-        public PaystackTransactionData data { get; set; }
+        public PaystackTransactionData? data { get; set; }
     }
 
 
