@@ -1,25 +1,17 @@
+using BankTransfer.API.Extensions;
+using BankTransfer.API.Providers;
+using BankTransfer.API.Services;
+using BankTransfer.Core.Helpers;
+using BankTransfer.Core.Interface;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//IOC container for services
+builder.Services.AddCBAServices();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
+// Configure the HTTP request middleware pipeline.
+app.UseCBAMiddleware(builder.Environment);
 
 app.Run();

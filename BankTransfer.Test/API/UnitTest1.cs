@@ -1,4 +1,4 @@
-namespace BankTransfer.Test
+namespace BankTransfer.Test.API
 {
     [TestClass]
     public class UnitTest1
